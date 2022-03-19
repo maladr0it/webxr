@@ -38,8 +38,8 @@ const run = async () => {
 
   const ASPECT_RATIO = VIEWPORT_WIDTH / VIEWPORT_HEIGHT;
   const FOV_RADS = Math.PI / 2;
-  const Z_NEAR = 0.01;
-  const Z_FAR = 10000;
+  const Z_NEAR = 0.1;
+  const Z_FAR = 100;
 
   const CAMERA_SPEED = 5;
 
@@ -157,7 +157,7 @@ const run = async () => {
   // set as 1x1 blue while the image loads
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
 
-  loadImage("images/f-texture.png").then((textureImage) => {
+  loadImage("images/container.png").then((textureImage) => {
     gl.activeTexture(gl.TEXTURE0 + 0);
     gl.bindTexture(gl.TEXTURE_2D, texture1);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
@@ -170,7 +170,7 @@ const run = async () => {
   // set as 1x1 red while the image loads
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0, 255]));
 
-  loadImage("images/leaves.jpg").then((textureImage) => {
+  loadImage("images/f-texture.png").then((textureImage) => {
     gl.activeTexture(gl.TEXTURE0 + 1);
     gl.bindTexture(gl.TEXTURE_2D, texture2);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
@@ -197,7 +197,7 @@ const run = async () => {
   const camera = camera_create();
   camera_turn(camera, Math.PI / 2, 0);
 
-  let cubePos = vec3_create(0, 0, -5);
+  let cubePos = vec3_create(6, 0, -5);
   let cubeRotX = 0;
   let cubeRotY = 0;
   let cubeRotZ = 0;

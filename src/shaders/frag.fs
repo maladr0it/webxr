@@ -14,5 +14,5 @@ in vec3 fragNormal;
 out vec4 outColor;
 
 void main() {
-  outColor = texture(texture2, fragTexCoord);
+  outColor = texture(texture1, fragTexCoord);
 }

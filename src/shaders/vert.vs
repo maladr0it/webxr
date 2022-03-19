@@ -17,5 +17,7 @@ void main() {
   fragTexCoord = vertTexCoord;
   fragNormal = vertNormal;
 
+  // gl_Position =  projMat * modelMat * vec4(vertPos, 1.0);
+
   gl_Position = projMat * viewMat * modelMat * vec4(vertPos, 1.0);
 }

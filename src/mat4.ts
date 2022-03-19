@@ -41,13 +41,15 @@ export const mat4_projection = (
 ) => {
   const result = mat4_allocate();
 
-  result[0] = 1 / (Math.tan(fov / 2) * aspectRatio);
+  log_write(frameLog, -(zFar + zNear) / (zFar - zNear), (-2 * zFar * zNear) / (zFar - zNear));
+
+  result[0] = 1 / (Math.tan(fov / 2));
   result[1] = 0;
   result[2] = 0;
   result[3] = 0;
 
   result[4] = 0;
-  result[5] = 1 / Math.tan(fov / 2);
+  result[5] = aspectRatio / Math.tan(fov / 2);
   result[6] = 0;
   result[7] = 0;
 
@@ -60,6 +62,8 @@ export const mat4_projection = (
   result[13] = 0;
   result[14] = -1;
   result[15] = 0;
+
+  log_write(frameLog, result);
 
   return result;
 };
