@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>webxr</title>
+    <style>
+      .canvas {
+        display: block;
+        height: 400px;
+        width: 800px;
+        outline: 1px solid black;
+      }
+
+      .log-container {
+        display: flex;
+        gap: 4px;
+      }
+
+      .log {
+        border: 1px solid black;
+        padding: 4px;
+        flex: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="canvas" class="canvas" tabindex="0"></canvas>
+    <div class="log-container">
+      <pre id="frame-log" class="log"></pre>
+      <pre id="log" class="log"></pre>
+    </div>
+    <script type="module" src="bundle.js"></script>
+  </body>
+</html>
