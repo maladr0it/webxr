@@ -1,6 +1,5 @@
 /// <reference lib="dom" />
-
-/// <reference types="./xr.d.ts" />
+/// <reference types="./index.d.ts" />
 
 import { createProgram, createShader } from "./shader.ts";
 import { frameLog, log, log_clear, log_write } from "./log.ts";
@@ -281,6 +280,9 @@ const run = async () => {
   const initXR = () => {
     if (!window.isSecureContext) {
       throw new Error("WebXR unavailable due to insecure context");
+    }
+
+    if (navigator.xr) {
     }
   };
 
