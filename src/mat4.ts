@@ -1,4 +1,3 @@
-import { frameLog, log_write } from "./log.ts";
 import { Vec3, vec3_cross, vec3_normalize, vec3_sub } from "./vec3.ts";
 
 export type Mat4 = Float32Array & { _tag: Mat4 };
@@ -41,8 +40,6 @@ export const mat4_projection = (
 ) => {
   const result = mat4_allocate();
 
-  log_write(frameLog, -(zFar + zNear) / (zFar - zNear), (-2 * zFar * zNear) / (zFar - zNear));
-
   result[0] = 1 / (Math.tan(fov / 2));
   result[1] = 0;
   result[2] = 0;
@@ -62,8 +59,6 @@ export const mat4_projection = (
   result[13] = 0;
   result[14] = -1;
   result[15] = 0;
-
-  log_write(frameLog, result);
 
   return result;
 };

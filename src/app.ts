@@ -1,11 +1,14 @@
 /// <reference lib="dom" />
 
+/// <reference types="./xr.d.ts" />
+
 import { createProgram, createShader } from "./shader.ts";
 import { frameLog, log, log_clear, log_write } from "./log.ts";
 import { vec3_create, vec3_lenSquared, vec3_mul, vec3_normalize } from "./vec3.ts";
 import { mat4_identity, mat4_mul, mat4_projection, mat4_rotX, mat4_rotY, mat4_rotZ, mat4_translate } from "./mat4.ts";
 import { camera_create, camera_getViewMat, camera_move, camera_turn } from "./camera.ts";
 import { loadImage } from "./utils.ts";
+import { CUBE_VERTS } from "./data/cube_verts.ts";
 
 enum InputButton {
   quit,
@@ -15,6 +18,15 @@ enum InputButton {
   right,
 }
 
+const VIEWPORT_WIDTH = 1024;
+const VIEWPORT_HEIGHT = 512;
+
+const ASPECT_RATIO = VIEWPORT_WIDTH / VIEWPORT_HEIGHT;
+const FOV_RADS = Math.PI / 2;
+const Z_NEAR = 0.1;
+const Z_FAR = 100;
+
+const CAMERA_SPEED = 10;
 const MOUSE_SENSITIVITY = 0.1;
 
 const MIN_STEP_TIME = 1 / 240 * 1000;
@@ -33,65 +45,9 @@ const isInputKey = (key: string): key is keyof typeof keyboardMap => {
 };
 
 const run = async () => {
-  const VIEWPORT_WIDTH = 1024;
-  const VIEWPORT_HEIGHT = 512;
-
-  const ASPECT_RATIO = VIEWPORT_WIDTH / VIEWPORT_HEIGHT;
-  const FOV_RADS = Math.PI / 2;
-  const Z_NEAR = 0.1;
-  const Z_FAR = 100;
-
-  const CAMERA_SPEED = 5;
-
-  // deno-fmt-ignore
-  const CUBE_VERTS = new Float32Array([
-    // pos                tex           normal
-    // front
-    -1.0, -1.0,  1.0,     0.0, 0.0,      0.0,  0.0,  1.0,
-     1.0, -1.0,  1.0,     1.0, 0.0,      0.0,  0.0,  1.0,
-     1.0,  1.0,  1.0,     1.0, 1.0,      0.0,  0.0,  1.0,
-    -1.0, -1.0,  1.0,     0.0, 0.0,      0.0,  0.0,  1.0,
-     1.0,  1.0,  1.0,     1.0, 1.0,      0.0,  0.0,  1.0,
-    -1.0,  1.0,  1.0,     0.0, 1.0,      0.0,  0.0,  1.0,
-    // right
-     1.0, -1.0,  1.0,     0.0, 0.0,      1.0,  0.0,  0.0,
-     1.0, -1.0, -1.0,     1.0, 0.0,      1.0,  0.0,  0.0,
-     1.0,  1.0, -1.0,     1.0, 1.0,      1.0,  0.0,  0.0,
-     1.0, -1.0,  1.0,     0.0, 0.0,      1.0,  0.0,  0.0,
-     1.0,  1.0, -1.0,     1.0, 1.0,      1.0,  0.0,  0.0,
-     1.0,  1.0,  1.0,     0.0, 1.0,      1.0,  0.0,  0.0,
-     // back
-     1.0, -1.0, -1.0,     0.0, 0.0,      0.0,  0.0, -1.0,
-    -1.0, -1.0, -1.0,     1.0, 0.0,      0.0,  0.0, -1.0,
-    -1.0,  1.0, -1.0,     1.0, 1.0,      0.0,  0.0, -1.0,
-     1.0, -1.0, -1.0,     0.0, 0.0,      0.0,  0.0, -1.0,
-    -1.0,  1.0, -1.0,     1.0, 1.0,      0.0,  0.0, -1.0,
-     1.0,  1.0, -1.0,     0.0, 1.0,      0.0,  0.0, -1.0,
-     // left
-    -1.0, -1.0, -1.0,     0.0, 0.0,     -1.0,  0.0,  0.0,
-    -1.0, -1.0,  1.0,     1.0, 0.0,     -1.0,  0.0,  0.0,
-    -1.0,  1.0,  1.0,     1.0, 1.0,     -1.0,  0.0,  0.0,
-    -1.0, -1.0, -1.0,     0.0, 0.0,     -1.0,  0.0,  0.0,
-    -1.0,  1.0,  1.0,     1.0, 1.0,     -1.0,  0.0,  0.0,
-    -1.0,  1.0, -1.0,     0.0, 1.0,     -1.0,  0.0,  0.0,
-     // top
-    -1.0,  1.0,  1.0,     0.0, 0.0,      0.0,  1.0,  0.0,
-     1.0,  1.0,  1.0,     1.0, 0.0,      0.0,  1.0,  0.0,
-     1.0,  1.0, -1.0,     1.0, 1.0,      0.0,  1.0,  0.0,
-    -1.0,  1.0,  1.0,     0.0, 0.0,      0.0,  1.0,  0.0,
-     1.0,  1.0, -1.0,     1.0, 1.0,      0.0,  1.0,  0.0,
-    -1.0,  1.0, -1.0,     0.0, 1.0,      0.0,  1.0,  0.0,
-     // bot
-    -1.0, -1.0, -1.0,     0.0, 0.0,      0.0, -1.0,  0.0,
-     1.0, -1.0, -1.0,     1.0, 0.0,      0.0, -1.0,  0.0,
-     1.0, -1.0,  1.0,     1.0, 1.0,      0.0, -1.0,  0.0,
-    -1.0, -1.0, -1.0,     0.0, 0.0,      0.0, -1.0,  0.0,
-     1.0, -1.0,  1.0,     1.0, 1.0,      0.0, -1.0,  0.0,
-    -1.0, -1.0,  1.0,     0.0, 1.0,      0.0, -1.0,  0.0,
-  ]);
-
-  const logEl = document.getElementById("log") as HTMLElement;
   const frameLogEl = document.getElementById("frame-log") as HTMLElement;
+  const logEl = document.getElementById("log") as HTMLElement;
+  const vrButton = document.getElementById("vr-button") as HTMLButtonElement;
 
   const canvasEl = document.getElementById("canvas") as HTMLCanvasElement;
   const gl = canvasEl.getContext("webgl2");
@@ -197,7 +153,6 @@ const run = async () => {
   const camera = camera_create();
   camera_turn(camera, Math.PI / 2, 0);
 
-  let cubePos = vec3_create(6, 0, -5);
   let cubeRotX = 0;
   let cubeRotY = 0;
   let cubeRotZ = 0;
@@ -236,7 +191,7 @@ const run = async () => {
   //
   const render = () => {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0, 0, 0, 0);
+    gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     gl.useProgram(program);
@@ -250,15 +205,20 @@ const run = async () => {
     gl.uniform1i(gl.getUniformLocation(program, "texture1"), 0);
     gl.uniform1i(gl.getUniformLocation(program, "texture2"), 1);
 
-    let modelMat = mat4_identity();
-    modelMat = mat4_mul(modelMat, mat4_translate(cubePos));
-    modelMat = mat4_mul(modelMat, mat4_rotX(cubeRotX));
-    modelMat = mat4_mul(modelMat, mat4_rotY(cubeRotY));
-    modelMat = mat4_mul(modelMat, mat4_rotZ(cubeRotZ));
-    gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelMat"), true, modelMat);
-
     gl.bindVertexArray(vertexArray);
-    gl.drawArrays(gl.TRIANGLES, 0, CUBE_VERTS.length / 8);
+
+    for (let i = 0; i < 8; ++i) {
+      const cubePos = vec3_create(10 * Math.sin(2 * Math.PI * i / 8), 0, 10 * Math.cos(2 * Math.PI * i / 8));
+
+      let modelMat = mat4_identity();
+
+      modelMat = mat4_mul(modelMat, mat4_translate(cubePos));
+      modelMat = mat4_mul(modelMat, mat4_rotX(cubeRotX));
+      modelMat = mat4_mul(modelMat, mat4_rotY(cubeRotY));
+      modelMat = mat4_mul(modelMat, mat4_rotZ(cubeRotZ));
+      gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelMat"), true, modelMat);
+      gl.drawArrays(gl.TRIANGLES, 0, CUBE_VERTS.length / 8);
+    }
   };
 
   //
@@ -317,6 +277,14 @@ const run = async () => {
   });
 
   canvasEl.addEventListener("click", canvasEl.requestPointerLock);
+
+  const initXR = () => {
+    if (!window.isSecureContext) {
+      throw new Error("WebXR unavailable due to insecure context");
+    }
+  };
+
+  vrButton.addEventListener("click", initXR);
 
   requestAnimationFrame(loop);
 };
